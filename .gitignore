@@ -5,12 +5,15 @@ backend/.pytest_cache/
 backend/venv/
 backend/env/
 
-# Environment variables
+# Environment variables (NEVER commit these)
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# BUT we DO want to track the example file
+# .env.example should be committed
 
 # Next.js
 .next/
@@ -36,7 +39,7 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-# Database
+# Database files (don't commit actual data)
 *.db
 *.sqlite
 *.sqlite3
@@ -62,9 +65,6 @@ tmp/
 .Trashes
 ehthumbs.db
 Thumbs.db
-
-# Docker
-.dockerignore
 
 # Coverage directory used by tools like istanbul
 coverage/
