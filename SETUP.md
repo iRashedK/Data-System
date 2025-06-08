@@ -1,81 +1,24 @@
-# Setup Guide
+## 🚀 Quick Start
 
-This document provides detailed instructions for setting up the Data Classification System.
-
-## Environment Setup
-
-1. **Clone the repository**:
-   \`\`\`bash
-   git clone https://github.com/iRashedK/Data-System.git
-   cd Data-System
-   \`\`\`
-
-2. **Set up environment variables**:
-   \`\`\`bash
-   cp .env.example .env
-   \`\`\`
-   
-   Edit the `.env` file to add your OpenRouter API key and other configuration options.
-
-3. **Install dependencies**:
-   \`\`\`bash
-   npm install
-   \`\`\`
-
-4. **Start the development server**:
-   \`\`\`bash
-   npm run dev
-   \`\`\`
-
-## Configuration Options
-
-### Database
-
-By default, the system uses SQLite for development. For production, configure PostgreSQL:
-
-\`\`\`
-DATABASE_URL=postgresql://username:password@localhost:5432/data_classifier
-\`\`\`
-
-### OpenRouter API
-
-Sign up at [OpenRouter](https://openrouter.ai) to get your API key, then add it to your `.env` file:
-
-\`\`\`
-OPENROUTER_API_KEY=sk-or-v1-your-api-key-here
-\`\`\`
-
-### Security
-
-For production, change the JWT secret:
-
-\`\`\`
-JWT_SECRET=your-super-secure-random-string
-\`\`\`
-
-## Running in Production
-
-For production deployment:
-
-1. Build the application:
-   \`\`\`bash
-   npm run build
-   \`\`\`
-
-2. Start the production server:
-   \`\`\`bash
-   npm start
-   \`\`\`
-
-## Docker Deployment
-
-You can also use Docker for deployment:
+### 1. Clone and Setup Environment
 
 \`\`\`bash
-docker-compose up -d
+# Clone the repository
+git clone https://github.com/iRashedK/Data-System.git
+cd Data-System
+
+# Copy environment template
+cp .env.example .env
+
+# Edit the environment file with your settings
+nano .env  # or use your preferred editor
 \`\`\`
 
-This will start all required services (frontend, backend, database, Redis).
-\`\`\`
+### 2. Required Environment Variables
 
-Let's create a basic package.json:
+**Minimum required setup:**
+- `OPENROUTER_API_KEY` - Get from https://openrouter.ai/
+- `JWT_SECRET` - Change to a secure random string
+- `ENCRYPTION_KEY` - Must be exactly 32 characters
+
+**For local development, you can use the default database settings.**
