@@ -1,150 +1,60 @@
-"use client"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
-import { useState } from "react"
-import { FileUploader } from "./components/FileUploader"
-import { Dashboard } from "./components/Dashboard"
-import { Navbar } from "./components/Navbar"
-import { Footer } from "./components/Footer"
-import { ClassificationSettings } from "./components/ClassificationSettings"
-import type { ClassificationResult, TableClassification } from "./types"
-import { generateTableClassification } from "./utils/table-classification"
-import { classifyDataAccordingToSaudiPolicy } from "./utils/saudi-classification"
-
-export default function Page() {
-  const [results, setResults] = useState<ClassificationResult[] | null>(null)
-  const [tableClassification, setTableClassification] = useState<TableClassification | null>(null)
-  const [loading, setLoading] = useState<boolean>(false)
-  const [error, setError] = useState<string | null>(null)
-  const [settingsOpen, setSettingsOpen] = useState<boolean>(false)
-  const [settings, setSettings] = useState({
-    useAI: false,
-    apiKey: "",
-    sampleSize: 10,
-  })
-
-  const handleFileUpload = async (file: File) => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      // Extract table name from file name
-      const tableName = file.name.replace(/\.[^/.]+$/, "") // Remove file extension
-
-      // Read the Excel file using FileReader
-      const arrayBuffer = await file.arrayBuffer()
-
-      // Import XLSX library dynamically
-      const XLSX = await import("xlsx")
-
-      // Parse the Excel file
-      const workbook = XLSX.read(arrayBuffer, { type: "array" })
-      const sheetName = workbook.SheetNames[0]
-      const worksheet = workbook.Sheets[sheetName]
-
-      // Convert to JSON
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
-
-      if (jsonData.length === 0) {
-        throw new Error("ملف Excel فارغ")
-      }
-
-      // Get column headers (first row)
-      const headers = jsonData[0] as string[]
-
-      if (!headers || headers.length === 0) {
-        throw new Error("لم يتم العثور على رؤوس الأعمدة في ملف Excel")
-      }
-
-      // Get sample data for each column
-      const sampleData: { [key: string]: any[] } = {}
-      headers.forEach((header, index) => {
-        if (header) {
-          sampleData[header] = []
-          // Get first N non-empty values for this column
-          for (let row = 1; row < Math.min(jsonData.length, settings.sampleSize + 1); row++) {
-            const value = (jsonData[row] as any[])?.[index]
-            if (value !== undefined && value !== null && value !== "") {
-              sampleData[header].push(value)
-            }
-          }
-        }
-      })
-
-      // Classify each column using Saudi policy
-      const classificationResults: ClassificationResult[] = []
-
-      headers.forEach((header) => {
-        if (header && header.trim()) {
-          const result = classifyDataAccordingToSaudiPolicy(header, sampleData[header] || [])
-          classificationResults.push(result)
-        }
-      })
-
-      if (classificationResults.length === 0) {
-        throw new Error("لم يتم العثور على أعمدة صالحة للتصنيف")
-      }
-
-      // Generate table-level classification (المبدأ الرابع: المستوى الأعلى من الحماية)
-      const tableClass = generateTableClassification(tableName, classificationResults)
-
-      setResults(classificationResults)
-      setTableClassification(tableClass)
-    } catch (err) {
-      console.error("File processing error:", err)
-      setError(err instanceof Error ? err.message : "حدث خطأ أثناء معالجة الملف")
-      setResults(null)
-      setTableClassification(null)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleSettingsChange = (newSettings: typeof settings) => {
-    setSettings(newSettings)
-  }
-
+export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar onSettingsClick={() => setSettingsOpen(true)} />
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2 text-center">نظام تصنيف البيانات السعودي</h1>
-        <p className="text-center text-gray-600 mb-8">
-          وفقاً لسياسة تصنيف البيانات الصادرة عن المكتب الوطني لإدارة البيانات
-        </p>
-
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6">
-          <div className="flex items-center">
-            <span className="text-lg mr-2">✅</span>
-            <span className="font-medium">حالة النظام: جاهز (تصنيف وفقاً للسياسة السعودية)</span>
+    <div className="flex min-h-screen flex-col">
+      <header className="sticky top-0 z-40 border-b bg-background">
+        <div className="container flex h-16 items-center justify-between py-4">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold">Data Classification System</h1>
           </div>
-          <p className="text-sm mt-1">يتم معالجة الملفات محلياً في المتصفح لضمان أقصى درجات الأمان والخصوصية.</p>
+          <nav className="flex items-center gap-4">
+            <Link href="/dashboard">
+              <Button variant="outline">Dashboard</Button>
+            </Link>
+          </nav>
         </div>
-
-        <FileUploader onFileUpload={handleFileUpload} />
-
-        {loading && (
-          <div className="flex flex-col items-center justify-center my-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500 mb-4"></div>
-            <p className="text-gray-600">جاري معالجة ملف Excel وتصنيف البيانات...</p>
+      </header>
+      <main className="flex-1">
+        <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
+          <div className="flex max-w-[980px] flex-col items-start gap-2">
+            <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
+              Data Classification System
+            </h1>
+            <p className="max-w-[700px] text-lg text-muted-foreground">
+              Automatically classify structured data based on local and international regulations, including Saudi NDMO,
+              NCA, PDPL, GDPR, and DAMA.
+            </p>
           </div>
-        )}
-
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative my-4" role="alert">
-            <strong className="font-bold">خطأ: </strong>
-            <span className="block sm:inline">{error}</span>
+          <div className="flex gap-4">
+            <Link href="/dashboard">
+              <Button>Get Started</Button>
+            </Link>
+            <Link href="https://github.com/iRashedK/Data-System" target="_blank" rel="noreferrer">
+              <Button variant="outline">GitHub</Button>
+            </Link>
           </div>
-        )}
-
-        {results && tableClassification && <Dashboard results={results} tableClassification={tableClassification} />}
+        </section>
       </main>
-      <Footer />
-
-      <ClassificationSettings
-        isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        onSettingsChange={handleSettingsChange}
-      />
+      <footer className="border-t">
+        <div className="container flex flex-col items-center justify-between gap-4 py-10 md:h-24 md:flex-row md:py-0">
+          <div className="flex flex-col items-center gap-4 px-8 md:flex-row md:gap-2 md:px-0">
+            <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
+              Built by Rashed. The source code is available on{" "}
+              <a
+                href="https://github.com/iRashedK/Data-System"
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium underline underline-offset-4"
+              >
+                GitHub
+              </a>
+              .
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

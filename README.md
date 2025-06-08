@@ -1,15 +1,18 @@
-# AI Data Classification System
+# Data Classification System
 
-A production-ready, enterprise-grade data classification system that automatically classifies structured data using AI according to international regulations including NDMO, PDPL, GDPR, NCA, and DAMA frameworks.
+A comprehensive data classification system that automatically classifies structured data based on local and international regulations, including Saudi NDMO, NCA, PDPL, GDPR, and DAMA.
 
 ## 🚀 Features
 
 ### Core Functionality
-- **AI-Powered Classification**: Uses OpenRouter (Claude/GPT-4) for intelligent data classification
-- **Multi-Source Support**: Upload Excel/CSV files or connect to PostgreSQL, MySQL, SQL Server
-- **Regulation Compliance**: Supports NDMO, PDPL, GDPR, NCA, and DAMA frameworks
-- **Custom Rules Engine**: Define pattern-based classification rules
-- **Real-time Processing**: Instant classification with confidence scoring
+- **🔍 Automatic data classification**: Uses OpenRouter (Claude/GPT-4) for intelligent data classification
+- **🔒 Compliance with Saudi regulations**: Supports NDMO, NCA, PDPL frameworks
+- **🌐 International standards support**: Supports GDPR, DAMA frameworks
+- **📊 Interactive dashboard with KPIs**: Provides insights into classification metrics
+- **🧠 AI-powered classification using OpenRouter**: Utilizes advanced AI models for classification
+- **📂 Open Data Generator for public datasets**: Generates sample datasets for testing and development
+- **🔄 Export functionality**: Supports CSV, JSON, Excel formats for exporting classification results
+- **🌙 Dark/Light mode**: Offers a modern, responsive UI with theme options
 
 ### Enterprise Features
 - **Role-Based Access Control**: Admin, Data Steward, Analyst, Auditor roles
@@ -53,13 +56,17 @@ A production-ready, enterprise-grade data classification system that automatical
 ### Prerequisites
 - Docker & Docker Compose
 - OpenRouter API Key ([Get one here](https://openrouter.ai))
+- Node.js 18+
+- Python 3.9+
+- PostgreSQL (optional, SQLite for development)
+- Redis (optional for caching)
 
 ### Installation
 
 1. **Clone the repository**
 \`\`\`bash
-git clone https://github.com/your-org/ai-data-classifier.git
-cd ai-data-classifier
+git clone https://github.com/iRashedK/Data-System.git
+cd Data-System
 \`\`\`
 
 2. **Configure environment**
@@ -68,12 +75,17 @@ cp .env.example .env
 # Edit .env with your OpenRouter API key and other settings
 \`\`\`
 
-3. **Start the system**
+3. **Install dependencies**
 \`\`\`bash
-docker-compose up -d
+npm install
 \`\`\`
 
-4. **Access the application**
+4. **Start the development server**
+\`\`\`bash
+npm run dev
+\`\`\`
+
+5. **Access the application**
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000
 - API Documentation: http://localhost:8000/docs
@@ -353,8 +365,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Troubleshooting](docs/troubleshooting.md)
 
 ### Community
-- [GitHub Issues](https://github.com/your-org/ai-data-classifier/issues)
-- [Discussions](https://github.com/your-org/ai-data-classifier/discussions)
+- [GitHub Issues](https://github.com/iRashedK/Data-System/issues)
+- [Discussions](https://github.com/iRashedK/Data-System/discussions)
 - [Discord Community](https://discord.gg/your-server)
 
 ### Commercial Support
