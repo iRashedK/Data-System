@@ -1,19 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  swcMinify: true,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
+  output: "standalone",
+  experimental: {
+    serverComponentsExternalPackages: ["@prisma/client"],
   },
   images: {
     domains: ["localhost"],
-    unoptimized: true,
   },
-  experimental: {
-    serverActions: true,
+  env: {
+    CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
 }
 

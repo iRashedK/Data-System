@@ -1,67 +1,41 @@
 "use client"
 
-import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
-import { Sidebar } from "@/components/layout/Sidebar"
-import { Header } from "@/components/layout/Header"
-import { DashboardStats } from "@/components/dashboard/DashboardStats"
-import { UploadSection } from "@/components/upload/UploadSection"
-import { ResultsTable } from "@/components/results/ResultsTable"
-import { SettingsPanel } from "@/components/settings/SettingsPanel"
-import { AuditLogs } from "@/components/audit/AuditLogs"
-import { CustomRules } from "@/components/rules/CustomRules"
-import { api } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 
-type ActiveTab = "dashboard" | "upload" | "results" | "rules" | "settings" | "audit"
-
 export function Dashboard() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>("dashboard")
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const { user } = useAuth()
-
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ["dashboard-stats"],
-    queryFn: () => api.getDashboardStats(),
-    enabled: activeTab === "dashboard",
-  })
-
-  const { data: results, isLoading: resultsLoading } = useQuery({
-    queryKey: ["classification-results"],
-    queryFn: () => api.getClassificationResults(),
-    enabled: activeTab === "results",
-  })
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case "dashboard":
-        return <DashboardStats stats={stats} loading={statsLoading} />
-      case "upload":
-        return <UploadSection />
-      case "results":
-        return <ResultsTable results={results} loading={resultsLoading} />
-      case "rules":
-        return <CustomRules />
-      case "settings":
-        return <SettingsPanel />
-      case "audit":
-        return user?.role === "admin" ? <AuditLogs /> : <div>Access Denied</div>
-      default:
-        return <DashboardStats stats={stats} loading={statsLoading} />
-    }
-  }
+  const { user, logout } = useAuth()
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+    <div className="min-h-screen bg-gray-50">
+      <nav className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <h1 className="text-xl font-semibold">AI Data Classifier Pro</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-gray-700">Welcome, {user?.name}</span>
+              <button
+                onClick={logout}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900">
-          <div className="container mx-auto px-6 py-8">{renderContent()}</div>
-        </main>
-      </div>
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="px-4 py-6 sm:px-0">
+          <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 flex items-center justify-center">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Dashboard</h2>
+              <p className="text-gray-600">Welcome to the AI Data Classification System</p>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   )
 }
