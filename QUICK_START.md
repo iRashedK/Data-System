@@ -1,4 +1,12 @@
 # Quick Start Guide
+## Step 0: Configure Environment
+
+Copy the sample environment file and edit your settings:
+```bash
+cp .env.example .env
+# open .env in your editor to add API keys and secrets
+```
+
 
 ## Step 1: Start the Backend
 
