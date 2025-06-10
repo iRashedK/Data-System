@@ -4,8 +4,6 @@ Create a test Excel file for the Saudi Data Classification System
 """
 
 import pandas as pd
-from datetime import datetime, timedelta
-import random
 
 def create_test_excel():
     """Create a test Excel file with various data types"""
