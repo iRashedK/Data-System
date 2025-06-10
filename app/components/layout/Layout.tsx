@@ -1,59 +1,42 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
-import { useTheme } from "next-themes"
 import { Sidebar } from "./Sidebar"
 import { Header } from "./Header"
 import { cn } from "@/lib/utils"
+import { useMediaQuery } from "@/hooks/use-media-query" // This import should now work
 
-interface LayoutProps {
-  children: React.ReactNode
-}
+export default function Layout({ children }: { children: React.ReactNode }) {
+  const isMobile = useMediaQuery("(max-width: 1023px)")
+  const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile)
 
-export function Layout({ children }: LayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [isMobile, setIsMobile] = useState(false)
-  const { theme, setTheme } = useTheme()
-
-  // Handle responsive sidebar
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024)
-      if (window.innerWidth < 1024) {
-        setSidebarOpen(false)
-      } else {
-        setSidebarOpen(true)
-      }
+    // This effect ensures the sidebar state correctly reflects mobile status
+    // especially on initial load or when window is resized.
+    if (typeof window !== "undefined") {
+      // Ensure window is defined for client-side logic
+      setIsSidebarOpen(!isMobile)
     }
+  }, [isMobile])
 
-    checkMobile()
-    window.addEventListener("resize", checkMobile)
-    return () => window.removeEventListener("resize", checkMobile)
-  }, [])
-
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark")
+  const toggleSidebar = () => {
+    setIsSidebarOpen((prev) => !prev)
   }
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} isMobile={isMobile} />
-
+      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} isMobile={isMobile} />
       <div
         className={cn(
           "flex flex-col flex-1 w-full transition-all duration-300 ease-in-out",
-          sidebarOpen && !isMobile ? "lg:ml-64" : "",
+          // Adjust margin based on sidebar state and mobile view
+          isSidebarOpen && !isMobile ? "lg:ml-64" : "lg:ml-16", // Desktop: open vs closed
+          // isMobile && isSidebarOpen ? "ml-0" : "", // Mobile: if sidebar is overlay, no margin needed
+          // isMobile && !isSidebarOpen ? "ml-0" : ""
         )}
       >
-        <Header
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-          toggleTheme={toggleTheme}
-          currentTheme={theme || "light"}
-        />
-
+        <Header onMenuClick={toggleSidebar} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-background">{children}</main>
       </div>
     </div>

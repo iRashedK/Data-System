@@ -22,7 +22,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSettingsClick }) => {
                 />
               </svg>
             </div>
-            <span className="text-xl font-semibold text-gray-800">Saudi Data Guardian</span>
+            <span className="text-xl font-semibold text-gray-800">HOKM</span>
           </div>
 
           <div className="flex items-center space-x-6">
