@@ -12,6 +12,7 @@ import {
   LogOut,
   ChevronRight,
   ChevronLeft,
+  BookOpenText,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -42,6 +43,11 @@ export function Sidebar({ isOpen, setIsOpen, isMobile }: SidebarProps) {
       title: "Open Data Generator",
       href: "/open-data",
       icon: <Globe className="h-5 w-5" />,
+    },
+    {
+      title: "Data Catalog",
+      href: "/data-catalog",
+      icon: <BookOpenText className="h-5 w-5" />,
     },
     {
       title: "Data Sources",
