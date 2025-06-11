@@ -1,135 +1,154 @@
 "use client"
 
-import { useState } from "react"
-import { useDropzone } from "react-dropzone"
-import { Card } from "@/components/ui/card"
+import type React from "react"
+import { useState, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { FileSpreadsheet, Upload, X, CheckCircle, AlertTriangle } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { UploadCloud, FileText, X } from "lucide-react"
+import { useToast } from "@/hooks/use-toast" // Assuming you have this hook
 
-export function FileUploader() {
-  const [file, setFile] = useState<File | null>(null)
-  const [uploading, setUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "success" | "error">("idle")
+interface FileUploaderProps {
+  onFileUpload: (file: File) => void // Callback when a file is ready to be processed
+  // Add other props like accepted file types, max size, etc. if needed
+  acceptedFileTypes?: string // e.g., ".xlsx,.xls,.csv"
+  maxFileSizeMB?: number
+}
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: {
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
-      "application/vnd.ms-excel": [".xls"],
-      "text/csv": [".csv"],
-    },
-    maxFiles: 1,
-    onDrop: (acceptedFiles) => {
-      if (acceptedFiles.length > 0) {
-        setFile(acceptedFiles[0])
-      }
-    },
-  })
+export function FileUploader({
+  onFileUpload,
+  acceptedFileTypes = ".xlsx,.xls,.csv", // Default to common data files
+  maxFileSizeMB = 10, // Default max size
+}: FileUploaderProps) {
+  const [dragActive, setDragActive] = useState<boolean>(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const { toast } = useToast()
 
-  const handleUpload = () => {
-    if (!file) return
-
-    setUploading(true)
-    setUploadStatus("uploading")
-    setUploadProgress(0)
-
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval)
-          setUploading(false)
-          setUploadStatus("success")
-          return 100
-        }
-        return prev + 5
+  const handleFileValidation = (file: File): boolean => {
+    if (maxFileSizeMB && file.size > maxFileSizeMB * 1024 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "File too large",
+        description: `File size cannot exceed ${maxFileSizeMB}MB.`,
       })
-    }, 200)
+      return false
+    }
+    // Basic type check based on extension. More robust checks might be needed.
+    const fileExtension = "." + file.name.split(".").pop()?.toLowerCase()
+    if (acceptedFileTypes && !acceptedFileTypes.split(",").includes(fileExtension!)) {
+      toast({
+        variant: "destructive",
+        title: "Invalid file type",
+        description: `Please upload a file of type: ${acceptedFileTypes}.`,
+      })
+      return false
+    }
+    return true
   }
 
-  const handleCancel = () => {
-    setFile(null)
-    setUploading(false)
-    setUploadProgress(0)
-    setUploadStatus("idle")
+  const processFile = (file: File) => {
+    if (handleFileValidation(file)) {
+      setSelectedFile(file)
+    } else {
+      setSelectedFile(null) // Clear if validation fails
+    }
+  }
+
+  const handleDrag = useCallback((e: React.DragEvent<HTMLDivElement | HTMLFormElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true)
+    } else if (e.type === "dragleave") {
+      setDragActive(false)
+    }
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement | HTMLFormElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processFile(e.dataTransfer.files[0])
+    }
+  }, [])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault()
+    if (e.target.files && e.target.files[0]) {
+      processFile(e.target.files[0])
+    }
+  }
+
+  const handleSubmit = () => {
+    if (selectedFile) {
+      onFileUpload(selectedFile)
+      // Optionally clear the selected file after submission
+      // setSelectedFile(null);
+    } else {
+      toast({
+        title: "No file selected",
+        description: "Please select a file to upload.",
+      })
+    }
+  }
+
+  const openFileSelector = () => {
+    inputRef.current?.click()
   }
 
   return (
-    <Card className="p-6">
-      {!file ? (
-        <div
-          {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
-            isDragActive ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-          }`}
-        >
-          <input {...getInputProps()} />
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <div className="rounded-full bg-primary/10 p-4">
-              <Upload className="h-8 w-8 text-primary" />
-            </div>
-            <div>
-              <p className="text-lg font-medium">
-                {isDragActive ? "Drop your file here" : "Drag & drop your file here"}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">or click to browse (supports Excel and CSV files)</p>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div className="flex items-center space-x-4">
-              <div className="rounded-full bg-primary/10 p-2">
-                <FileSpreadsheet className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <p className="font-medium">{file.name}</p>
-                <p className="text-sm text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-              </div>
-            </div>
-            {!uploading && (
-              <Button variant="ghost" size="icon" onClick={handleCancel}>
-                <X className="h-4 w-4" />
-              </Button>
-            )}
+    <Card>
+      <CardHeader>
+        <CardTitle>Upload Data File</CardTitle>
+        <CardDescription>
+          Upload an Excel (.xlsx, .xls) or CSV (.csv) file for classification. Max size: {maxFileSizeMB}MB.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={(e) => e.preventDefault()} onDragEnter={handleDrag} className="space-y-4">
+          <div
+            className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md
+                        ${dragActive ? "border-primary bg-primary/10" : "border-muted hover:border-muted-foreground/50"}`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+          >
+            <UploadCloud className="w-12 h-12 text-muted-foreground mb-2" />
+            <Input ref={inputRef} type="file" className="hidden" accept={acceptedFileTypes} onChange={handleChange} />
+            <p className="text-muted-foreground">
+              <Button type="button" variant="link" onClick={openFileSelector} className="p-0 h-auto">
+                Click to upload
+              </Button>{" "}
+              or drag and drop.
+            </p>
+            <p className="text-xs text-muted-foreground">{acceptedFileTypes.replace(/\./g, "").toUpperCase()}</p>
           </div>
 
-          {uploadStatus === "uploading" && (
-            <div className="space-y-2">
+          {selectedFile && (
+            <div className="mt-4 p-3 bg-muted/50 rounded-md border">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Uploading...</span>
-                <span className="text-sm text-muted-foreground">{uploadProgress}%</span>
+                <div className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="text-sm font-medium truncate max-w-xs">{selectedFile.name}</p>
+                    <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setSelectedFile(null)} className="h-7 w-7">
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-              <Progress value={uploadProgress} className="h-2" />
             </div>
           )}
 
-          {uploadStatus === "success" && (
-            <div className="flex items-center space-x-2 text-green-600 bg-green-50 p-3 rounded-lg">
-              <CheckCircle className="h-5 w-5" />
-              <span>File uploaded successfully! Processing data...</span>
-            </div>
-          )}
-
-          {uploadStatus === "error" && (
-            <div className="flex items-center space-x-2 text-red-600 bg-red-50 p-3 rounded-lg">
-              <AlertTriangle className="h-5 w-5" />
-              <span>Error uploading file. Please try again.</span>
-            </div>
-          )}
-
-          {uploadStatus === "idle" && (
-            <div className="flex justify-end space-x-3">
-              <Button variant="outline" onClick={handleCancel}>
-                Cancel
-              </Button>
-              <Button onClick={handleUpload}>Upload & Classify</Button>
-            </div>
-          )}
-        </div>
-      )}
+          <Button type="button" onClick={handleSubmit} disabled={!selectedFile} className="w-full">
+            Process File
+          </Button>
+        </form>
+      </CardContent>
     </Card>
   )
 }

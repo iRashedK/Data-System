@@ -1,124 +1,142 @@
 "use client"
 
 import { useState } from "react"
-import { Layout } from "@/components/layout/Layout"
+import { Layout } from "@/components/layout/Layout" // Assuming this path
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
-import { FileUploader } from "@/components/classification/FileUploader"
-import { DatabaseConnector } from "@/components/classification/DatabaseConnector"
-import { FileSpreadsheet, Database, Info, Edit, Eye, Download, Filter, Search } from "lucide-react"
+import { FileUploader } from "@/components/classification/FileUploader" // Assuming this path
+import { DatabaseConnector } from "@/components/classification/DatabaseConnector" // Assuming this path
+import { FileSpreadsheet, Database, Download, Filter, Search, AlertCircle } from "lucide-react"
+import { useData } from "@/app/contexts/DataContext"
+import type { TableMetadata, ColumnMetadata } from "@/app/types" // Assuming this path
+import { classifyDataAccordingToSaudiPolicy } from "@/app/utils/saudi-classification" // Assuming this path
+// import { classifyWithAI } from "@/app/utils/ai-classification"; // Would be used for real AI
 
-// Sample classification results
-const classificationResults = [
-  {
-    id: 1,
-    column: "national_id",
-    classification: "Top Secret",
-    regulation: "PDPL",
-    confidence: 0.98,
-    justification:
-      "Contains Saudi national identification numbers which are highly sensitive personal identifiers protected under PDPL Article 5.",
-  },
-  {
-    id: 2,
-    column: "email_address",
-    classification: "Confidential",
-    regulation: "GDPR",
-    confidence: 0.95,
-    justification: "Contains personal email addresses which are considered personal data under GDPR Article 4.",
-  },
-  {
-    id: 3,
-    column: "full_name",
-    classification: "Confidential",
-    regulation: "PDPL",
-    confidence: 0.92,
-    justification: "Contains personal names which are protected under Saudi PDPL regulations.",
-  },
-  {
-    id: 4,
-    column: "department",
-    classification: "Internal",
-    regulation: "DAMA",
-    confidence: 0.87,
-    justification: "Contains internal organizational structure information that should be restricted to internal use.",
-  },
-  {
-    id: 5,
-    column: "service_name",
-    classification: "Public",
-    regulation: "DAMA",
-    confidence: 0.99,
-    justification: "Contains public service information with no restrictions under data management frameworks.",
-  },
-  {
-    id: 6,
-    column: "city",
-    classification: "Public",
-    regulation: "DAMA",
-    confidence: 0.99,
-    justification: "Contains public geographic information with no restrictions.",
-  },
-  {
-    id: 7,
-    column: "sector",
-    classification: "Public",
-    regulation: "DAMA",
-    confidence: 0.98,
-    justification: "Contains public sector categorization with no restrictions.",
-  },
-  {
-    id: 8,
-    column: "beneficiaries_count",
-    classification: "Public",
-    regulation: "DAMA",
-    confidence: 0.95,
-    justification: "Contains aggregated statistical data with no personal information.",
-  },
-]
+// Helper to generate a unique ID
+const generateId = () => Math.random().toString(36).substr(2, 9)
 
 export default function ClassificationPage() {
+  const { addProcessedDataSource, processedDataSources } = useData()
   const [activeTab, setActiveTab] = useState("upload")
-  const [selectedResult, setSelectedResult] = useState<any>(null)
+  const [currentProcessingTable, setCurrentProcessingTable] = useState<TableMetadata | null>(null)
+
+  // Filters for the displayed table
   const [searchTerm, setSearchTerm] = useState("")
   const [filterClassification, setFilterClassification] = useState("all")
 
-  const filteredResults = classificationResults.filter((result) => {
-    const matchesSearch = result.column.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesFilter = filterClassification === "all" || result.classification === filterClassification
-    return matchesSearch && matchesFilter
-  })
+  // This will be the table currently selected for display from processedDataSources
+  const [selectedDisplayTableId, setSelectedDisplayTableId] = useState<string | null>(null)
 
-  const getBadgeColor = (classification: string) => {
+  const displayTable = processedDataSources.find((table) => table.id === selectedDisplayTableId)
+
+  const handleFileUpload = async (file: File) => {
+    // Simulate file parsing and initial metadata extraction
+    // In a real app, this would involve reading the Excel file (e.g., using a library like 'xlsx')
+    console.log("Simulating processing for file:", file.name)
+
+    // Mock data extraction - assuming one sheet for simplicity
+    const sheetName = "Sheet1" // Or get actual sheet names
+    const newTableId = generateId()
+
+    // Mock columns from the file
+    const mockColumnsFromFile = [
+      { name: "national_id", sampleData: ["1234567890", "1987654321"] },
+      { name: "email_address", sampleData: ["test@example.com", "user@domain.sa"] },
+      { name: "full_name", sampleData: ["John Doe", "Jane Smith"] },
+      { name: "department", sampleData: ["HR", "Finance"] },
+    ]
+
+    const columns: ColumnMetadata[] = mockColumnsFromFile.map((colFromFile) => {
+      // Perform classification (using Saudi policy for this example)
+      // In a real scenario, you might call classifyWithAI or a similar function
+      const classificationResult = classifyDataAccordingToSaudiPolicy(colFromFile.name, colFromFile.sampleData)
+
+      return {
+        name: colFromFile.name,
+        dataType: "VARCHAR", // Infer or set default
+        isPK: false, // Infer or set default
+        isFK: false, // Infer or set default
+        description: classificationResult.description || `Description for ${colFromFile.name}`, // AI generated or default
+
+        // Classification details
+        classificationLevel: classificationResult.classificationEn,
+        classificationLevelAr: classificationResult.classification,
+        classificationJustification: classificationResult.justification,
+        // classificationRegulation: "PDPL", // Example, or from result
+        impactLevel: classificationResult.impactLevel,
+        impactCategory: classificationResult.impactCategory,
+        confidence: 0.9, // Example
+        sampleValues: colFromFile.sampleData.slice(0, 3),
+      }
+    })
+
+    let sensitiveColumnCount = 0
+    columns.forEach((col) => {
+      if (col.classificationLevel === "Top Secret" || col.classificationLevel === "Confidential") {
+        sensitiveColumnCount++
+      }
+    })
+
+    const newTable: TableMetadata = {
+      id: newTableId,
+      dataSourceName: file.name,
+      sourceSystemType: "Excel",
+      tableName: sheetName,
+      tableNameAr: `ورقة 1 (${file.name})`, // Example Arabic name
+      columns,
+      owner: "Current User", // Replace with actual user
+      description: `Data extracted from ${file.name}, sheet ${sheetName}.`, // AI generated or default
+      descriptionAr: `بيانات مستخرجة من ${file.name}، ورقة ${sheetName}.`,
+      lastUpdated: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      columnCount: columns.length,
+      sensitiveColumnCount: sensitiveColumnCount, // Calculate this
+      // Populate other TableMetadata fields as needed (overallClassification, riskLevel, etc.)
+      // For example, derive overallClassificationLevel:
+      overallClassificationLevel: columns.some((c) => c.classificationLevel === "Top Secret")
+        ? "Top Secret"
+        : columns.some((c) => c.classificationLevel === "Confidential")
+          ? "Confidential"
+          : columns.some((c) => c.classificationLevel === "Restricted")
+            ? "Restricted"
+            : "Public",
+      tags: ["excel-upload", file.name.split(".")[0]],
+      size: `${(file.size / 1024).toFixed(2)} KB`,
+    }
+
+    setCurrentProcessingTable(newTable) // Show processing state if needed
+    addProcessedDataSource(newTable)
+    setSelectedDisplayTableId(newTableId) // Automatically select the newly processed table for display
+    setCurrentProcessingTable(null) // Clear processing state
+    console.log("File processed and added to context:", newTable)
+  }
+
+  const getBadgeColor = (classification?: string) => {
     switch (classification) {
       case "Top Secret":
         return "destructive"
       case "Confidential":
-        return "warning"
-      case "Internal":
-        return "secondary"
+        return "warning" // Using 'warning' for orange-like
+      case "Restricted":
+        return "secondary" // Using 'secondary' for yellow/neutral
       case "Public":
-        return "default"
+        return "default" // Using 'default' for green/blue like
       default:
         return "outline"
     }
   }
+
+  const filteredColumns =
+    displayTable?.columns.filter((col) => {
+      const matchesSearch = col.name.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesFilter = filterClassification === "all" || col.classificationLevel === filterClassification
+      return matchesSearch && matchesFilter
+    }) || []
 
   return (
     <Layout>
@@ -143,173 +161,144 @@ export default function ClassificationPage() {
           </TabsList>
 
           <TabsContent value="upload" className="mt-4">
-            <FileUploader />
+            {/* Pass the handleFileUpload to FileUploader */}
+            <FileUploader onFileUpload={handleFileUpload} />
           </TabsContent>
 
           <TabsContent value="database" className="mt-4">
-            <DatabaseConnector />
+            <DatabaseConnector /> {/* DB Connector would also call addProcessedDataSource */}
           </TabsContent>
         </Tabs>
 
-        {/* Classification Results */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Classification Results</CardTitle>
-              <CardDescription>Review and manage your classified data columns</CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
+        {/* Display selection for processed tables if multiple exist */}
+        {processedDataSources.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Select Processed Data Source to View</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Select onValueChange={setSelectedDisplayTableId} value={selectedDisplayTableId || ""}>
+                <SelectTrigger className="w-[280px]">
+                  <SelectValue placeholder="Select a data source" />
+                </SelectTrigger>
+                <SelectContent>
+                  {processedDataSources.map((ds) => (
+                    <SelectItem key={ds.id} value={ds.id}>
+                      {ds.dataSourceName} - {ds.tableName} ({new Date(ds.createdAt).toLocaleTimeString()})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Classification Results Table - now uses displayTable from context */}
+        {displayTable ? (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>
+                  Classification Results for: {displayTable.dataSourceName} - {displayTable.tableName}
+                </CardTitle>
+                <CardDescription>
+                  Review and manage classified data columns. Overall:
+                  <Badge variant={getBadgeColor(displayTable.overallClassificationLevel)} className="ml-2">
+                    {displayTable.overallClassificationLevel || "N/A"}
+                  </Badge>
+                </CardDescription>
+              </div>
               <Button variant="outline" size="sm" className="flex items-center gap-1">
                 <Download className="h-4 w-4" />
                 <span>Export</span>
               </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between mb-4">
-              <div className="relative w-full max-w-sm">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search columns..."
-                  className="w-full pl-8"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between mb-4">
+                <div className="relative w-full max-w-sm">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Search columns..."
+                    className="w-full pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <Select value={filterClassification} onValueChange={setFilterClassification}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filter by classification" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Classifications</SelectItem>
+                      <SelectItem value="Top Secret">Top Secret</SelectItem>
+                      <SelectItem value="Confidential">Confidential</SelectItem>
+                      <SelectItem value="Restricted">Restricted</SelectItem>
+                      <SelectItem value="Public">Public</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <Select value={filterClassification} onValueChange={setFilterClassification}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by classification" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Classifications</SelectItem>
-                    <SelectItem value="Top Secret">Top Secret</SelectItem>
-                    <SelectItem value="Confidential">Confidential</SelectItem>
-                    <SelectItem value="Internal">Internal</SelectItem>
-                    <SelectItem value="Public">Public</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Column</TableHead>
-                    <TableHead>Classification</TableHead>
-                    <TableHead>Regulation</TableHead>
-                    <TableHead>Confidence</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredResults.map((result) => (
-                    <TableRow key={result.id}>
-                      <TableCell className="font-medium">{result.column}</TableCell>
-                      <TableCell>
-                        <Badge variant={getBadgeColor(result.classification)}>{result.classification}</Badge>
-                      </TableCell>
-                      <TableCell>{result.regulation}</TableCell>
-                      <TableCell>{(result.confidence * 100).toFixed(0)}%</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => setSelectedResult(result)}>
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>View details</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Edit Classification</DialogTitle>
-                                <DialogDescription>
-                                  Update the classification for column "{result.column}"
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                  <Label htmlFor="classification" className="text-right">
-                                    Classification
-                                  </Label>
-                                  <Select defaultValue={result.classification}>
-                                    <SelectTrigger className="col-span-3">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="Top Secret">Top Secret</SelectItem>
-                                      <SelectItem value="Confidential">Confidential</SelectItem>
-                                      <SelectItem value="Internal">Internal</SelectItem>
-                                      <SelectItem value="Public">Public</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                  <Label htmlFor="regulation" className="text-right">
-                                    Regulation
-                                  </Label>
-                                  <Select defaultValue={result.regulation}>
-                                    <SelectTrigger className="col-span-3">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="PDPL">PDPL</SelectItem>
-                                      <SelectItem value="GDPR">GDPR</SelectItem>
-                                      <SelectItem value="NDMO">NDMO</SelectItem>
-                                      <SelectItem value="NCA">NCA</SelectItem>
-                                      <SelectItem value="DAMA">DAMA</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                  <Label htmlFor="justification" className="text-right">
-                                    Justification
-                                  </Label>
-                                  <Input
-                                    id="justification"
-                                    defaultValue={result.justification}
-                                    className="col-span-3"
-                                  />
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <Button type="submit">Save changes</Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <Info className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-xs">{result.justification}</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                      </TableCell>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Column</TableHead>
+                      <TableHead>Data Type</TableHead>
+                      <TableHead>Classification</TableHead>
+                      <TableHead>Regulation</TableHead>
+                      <TableHead>Confidence</TableHead>
+                      <TableHead>Description</TableHead>
+                      {/* <TableHead className="text-right">Actions</TableHead> */}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredColumns.map((col) => (
+                      <TableRow key={col.name}>
+                        <TableCell className="font-medium">{col.name}</TableCell>
+                        <TableCell>{col.dataType}</TableCell>
+                        <TableCell>
+                          <Badge variant={getBadgeColor(col.classificationLevel)}>
+                            {col.classificationLevel || "N/A"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{col.classificationRegulation || "N/A"}</TableCell>
+                        <TableCell>{col.confidence ? (col.confidence * 100).toFixed(0) + "%" : "N/A"}</TableCell>
+                        <TableCell className="truncate max-w-xs" title={col.description}>
+                          {col.description}
+                        </TableCell>
+                        {/* Actions like Edit/View Details can be added here */}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {filteredColumns.length === 0 && searchTerm && (
+                <p className="text-center text-muted-foreground mt-4">No columns match your search.</p>
+              )}
+            </CardContent>
+          </Card>
+        ) : processedDataSources.length > 0 ? (
+          <Card className="mt-6">
+            <CardContent className="pt-6 text-center">
+              <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />
+              <p className="mt-4 text-lg font-medium">
+                Please select a processed data source to view its classification results.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="mt-6">
+            <CardContent className="pt-6 text-center">
+              <FileSpreadsheet className="mx-auto h-12 w-12 text-muted-foreground" />
+              <p className="mt-4 text-lg font-medium">No data processed yet.</p>
+              <p className="text-muted-foreground">Upload a file or connect to a database to begin classification.</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </Layout>
   )
